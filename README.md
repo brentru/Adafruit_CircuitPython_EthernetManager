@@ -1,2 +1,0 @@
-# Adafruit_CircuitPython_EthernetManager
-Helper for managing ethernet
