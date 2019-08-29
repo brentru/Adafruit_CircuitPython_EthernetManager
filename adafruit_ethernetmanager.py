@@ -105,6 +105,28 @@ class EthernetManager:
         else:
             raise Ethernet_Exception("Disconnected - plug an ethernet cable in.")
 
+    def pixel_status(self, value):
+        """
+        Change Status Pixel if it was defined
+
+        :param value: The value to set the Board's status LED to
+        :type value: int or 3-value tuple
+        """
+        if self.statuspix:
+            if hasattr(self.statuspix, "color"):
+                self.statuspix.color = value
+            else:
+                self.statuspix.fill(value)
+
+    def readline(self, sock):
+        """Returns bytes up to '\r\n'"""
+        line = bytes()
+        while True:
+            data = sock.recv(1)
+            line +=data
+            if not data or "\r\n" in line: break
+        return line
+
     @property
     def is_connected(self):
         """Returns if an ethernet cable is physically connected."""
@@ -141,15 +163,7 @@ class EthernetManager:
         self.eth.ifconfig(ip_address, subnet_mask, gateway_address, dns_server)
         return
 
-    def pixel_status(self, value):
-        """
-        Change Status Pixel if it was defined
-
-        :param value: The value to set the Board's status LED to
-        :type value: int or 3-value tuple
-        """
-        if self.statuspix:
-            if hasattr(self.statuspix, "color"):
-                self.statuspix.color = value
-            else:
-                self.statuspix.fill(value)
+    @property
+    def ip_address(self):
+        """Returns the IP Address as a formatted string"""
+        return self.ifconfig()[0]
