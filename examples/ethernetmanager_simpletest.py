@@ -1,9 +1,6 @@
 import board
 import busio
-import time
 import neopixel
-
-import socket
 import adafruit_ethernetmanager as eth
 
 spi = busio.SPI(clock=board.SCK, MOSI=board.MOSI, MISO=board.MISO)
