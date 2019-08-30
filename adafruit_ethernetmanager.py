@@ -42,6 +42,7 @@ import gc
 import time
 import wiznet
 import socket
+import adafruit_requests as requests
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_EthernetManager.git"
@@ -63,11 +64,12 @@ class EthernetManager:
             self.eth = wiznet.WIZNET5K(spi, cs, reset_pin)
         else:
             self.eth = wiznet.WIZNET5K(spi, cs)
-        # TODO: Add requests.set_socket() impl here?
-        # or set it in connect() with a successful connection...
         self.debug = debug
         self.statuspix = status_pixel
         self.pixel_status(0)
+        sock = socket.socket()
+        requests.set_socket(socket, self)
+
 
     def __enter__(self):
         return self
@@ -126,12 +128,12 @@ class EthernetManager:
             "Reset pin must be provided to EthernetManager prior to initialization."
         )
 
-    def readline(self, sock, timeout):
+    def readline(self, sock, timeout=1):
         """CPython socket readline implementation, returns bytes
         up to, but not including '\r\n'
-        NOTE: The timeout parameter will be removed when native socket timeout is fixed.
         :param sock: Socket object
         :param int timeout: Socket read timeout, in seconds.
+        NOTE: timeout parameter will be removed when native socket timeout is fixed.
         """
         initial = time.monotonic()
         line = bytes()
@@ -179,7 +181,7 @@ class EthernetManager:
         :return: The response from the request
         :rtype: Response
         """
-        if not self.esp.is_connected:
+        if not self.is_connected:
             self.connect()
         self.pixel_status((0, 0, 100))
         return_val = requests.get(url, **kw)
@@ -198,7 +200,7 @@ class EthernetManager:
         :return: The response from the request
         :rtype: Response
         """
-        if not self.esp.is_connected:
+        if not self.is_connected:
             self.connect()
         self.pixel_status((0, 0, 100))
         return_val = requests.post(url, **kw)
@@ -216,7 +218,7 @@ class EthernetManager:
         :return: The response from the request
         :rtype: Response
         """
-        if not self.esp.is_connected:
+        if not self.is_connected:
             self.connect()
         self.pixel_status((0, 0, 100))
         return_val = requests.put(url, **kw)
@@ -235,7 +237,7 @@ class EthernetManager:
         :return: The response from the request
         :rtype: Response
         """
-        if not self.esp.is_connected:
+        if not self.is_connected:
             self.connect()
         self.pixel_status((0, 0, 100))
         return_val = requests.patch(url, **kw)
@@ -254,7 +256,7 @@ class EthernetManager:
         :return: The response from the request
         :rtype: Response
         """
-        if not self.esp.is_connected:
+        if not self.is_connected:
             self.connect()
         self.pixel_status((0, 0, 100))
         return_val = requests.delete(url, **kw)
