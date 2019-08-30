@@ -138,11 +138,9 @@ class EthernetManager:
         while b"\r\n" not in line:
             data = sock.recv(1)
             line += data
-            if timeout > 0 and time.monotonic() - initial > timeout:
-                socket.close()
+            if timeout > 0 and time.monotonic() - initial > timeout or not data:
+                sock.close()
                 raise RuntimeError("Didn't receive full response, failing out")
-                break
-            if not data:
                 break
         # Remove EOL
         line = line.split(b"\r\n",1)
