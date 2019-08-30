@@ -17,11 +17,11 @@ print("Connecting...")
 ethernet.connect()
 print("Connected to ethernet with IP: ", ethernet.ip_address)
 
-
 TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
 JSON_GET_URL = "http://httpbin.org/get"
 JSON_POST_URL = "http://httpbin.org/post"
 
+ethernet.connect()
 
 print("Fetching text from %s"%TEXT_URL)
 response = ethernet.get(TEXT_URL)

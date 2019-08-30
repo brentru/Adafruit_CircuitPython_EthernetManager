@@ -54,14 +54,19 @@ class Ethernet_Exception(Exception):
     pass
 
 class EthernetManager:
-    """Class to assist manage interfacing with ethernet network hardware.
+    """Class to assist manage interfacing with ethernet hardware.
+    This class currently supports the Wiznet 5500 ethernet interface.
 
-    TODO: Add docstrings for args
+    :param ~busio.SPI spi: SPI object.
+    :param ~digitalio.DigitalInOut cs: Pin to use for chip select.
+    :param ~digitalio.DigitalInOut rst: Pin to use for optional reset.
+    :type status_pixel: NeoPixel, DotStar, or RGB LED
+    :param bool debug: Enable library debugging.
     """
 
-    def __init__(self, spi, cs, reset_pin=None, status_pixel=None, debug=False):
-        if reset_pin is not None:
-            self.eth = wiznet.WIZNET5K(spi, cs, reset_pin)
+    def __init__(self, spi, cs, rst=None, status_pixel=None, debug=False):
+        if rst is not None:
+            self.eth = wiznet.WIZNET5K(spi, cs, rst)
         else:
             self.eth = wiznet.WIZNET5K(spi, cs)
         self.debug = debug
@@ -84,7 +89,11 @@ class EthernetManager:
 
     @property
     def is_connected(self):
-        """Returns if an ethernet cable is physically connected."""
+        """Returns if an ethernet cable is physically connected
+        and if the device has an assigned IP Address.
+        """
+        if self.eth.ifconfig()[0] == "0.0.0.0":
+            return False
         return self.eth.connected
 
     @property
@@ -135,6 +144,10 @@ class EthernetManager:
         :param int timeout: Socket read timeout, in seconds.
         NOTE: timeout parameter will be removed when native socket timeout is fixed.
         """
+        if not self.is_connected:
+            print("attempting to establish another conn..")
+            self.connect()
+        time.sleep(0.05)
         initial = time.monotonic()
         line = bytes()
         while b"\r\n" not in line:
@@ -155,7 +168,7 @@ class EthernetManager:
         :param int attempts: Optional amount of connection failures before returning False.
         """
         failure_count = 0
-        if self.is_connected:
+        if self.eth.connected:
             if self.debug:
                 print("Checking for DCHP server...")
             self.pixel_status((100, 0, 0))
@@ -167,7 +180,7 @@ class EthernetManager:
             self.pixel_status((0, 100, 0))
             return True
         else:
-            raise Ethernet_Exception("Disconnected - plug an ethernet cable in.")
+            raise Ethernet_Exception("Disconnected - Plug an ethernet cable in.")
 
     def get(self, url, **kw):
         """
