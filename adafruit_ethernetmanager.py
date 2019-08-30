@@ -175,7 +175,7 @@ class EthernetManager:
             while self.eth.ifconfig()[0] == "0.0.0.0":
                 failure_count += 1
                 if failure_count >= attempts:
-                    return False
+                    raise Ethernet_Exception("Maximum connection attempts exceeded.")
                 time.sleep(1)
             self.pixel_status((0, 100, 0))
             return True
