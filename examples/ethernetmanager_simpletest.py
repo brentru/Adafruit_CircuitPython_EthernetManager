@@ -12,16 +12,13 @@ status_light = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.2)
 # Initialize a new EthernetManager object
 ethernet = eth.EthernetManager(spi, board.D10, status_pixel=status_light, debug=True)
 
-# Attempt to connect the ethernet hardware
-print("Connecting...")
+print("Attempting to connect to ethernet...")
 ethernet.connect()
-print("Connected to ethernet with IP: ", ethernet.ip_address)
+print("Connected to with IP: ", ethernet.ip_address)
 
 TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
 JSON_GET_URL = "http://httpbin.org/get"
 JSON_POST_URL = "http://httpbin.org/post"
-
-ethernet.connect()
 
 print("Fetching text from %s"%TEXT_URL)
 response = ethernet.get(TEXT_URL)
