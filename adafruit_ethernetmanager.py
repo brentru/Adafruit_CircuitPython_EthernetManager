@@ -51,7 +51,6 @@ class Ethernet_Exception(Exception):
     # pylint: disable=unnecessary-pass
     pass
 
-
 class EthernetManager:
     """Class to assist manage interfacing with ethernet network hardware.
 
@@ -85,6 +84,24 @@ class EthernetManager:
             "Reset pin must be provided to EthernetManager prior to initialization."
         )
 
+    def readline(sock):
+        """CPython socket readline implementation, returns bytes
+        up to, but not including '\r\n'
+        :param sock: Socket object"""
+        stamp - time.monotonic
+        line = bytes()
+
+        while b"\r\n" not in line:
+            data = sock.recv(1)
+            line += data
+            if sock.timeout > 0 and time.monotonic() - now > sock.timeout:
+                break
+            if not data:
+                break
+        # TODO, split off the b"\r\n" portion from the line
+        gc.collect()
+        return line
+
     def connect(self, attempts=30):
         """Attempts connecting with ethernet using the current settings.
         Returns True if ethernet interface is connected.
@@ -117,15 +134,6 @@ class EthernetManager:
                 self.statuspix.color = value
             else:
                 self.statuspix.fill(value)
-
-    def readline(self, sock):
-        """Returns bytes up to '\r\n'"""
-        line = bytes()
-        while True:
-            data = sock.recv(1)
-            line +=data
-            if not data or "\r\n" in line: break
-        return line
 
     @property
     def is_connected(self):
