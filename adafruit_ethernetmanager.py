@@ -97,16 +97,16 @@ class EthernetManager:
         return self.eth.connected
 
     @property
-    def dchp(self):
+    def dhcp(self):
         """Returns if DHCP is active."""
-        return self.eth.dchp
+        return self.eth.dhcp
 
-    @dchp.setter
-    def dchp(self, is_active):
-        """Set to activate DCHP.
-        :param bool is_active: Set True to activate DCHP.
+    @dhcp.setter
+    def dhcp(self, is_active):
+        """Set to activate dhcp.
+        :param bool is_active: Set True to activate dhcp.
         """
-        self.eth.dchp = is_active
+        self.eth.dhcp = is_active
         return
 
     @property
@@ -118,7 +118,7 @@ class EthernetManager:
 
     @ifconfig.setter
     def ifconfig(self, ip_address, subnet_mask, gateway_address, dns_server):
-        """Sets and configures the ethernet interface. Turns DCHP off, if it was on.
+        """Sets and configures the ethernet interface. Turns dhcp off, if it was on.
         :param str ip_address: Interface's ip address.
         :param str subnet_mask: Interface's subnet mask.
         :param str gateway_address: Interface's gateway address.
@@ -145,7 +145,6 @@ class EthernetManager:
         NOTE: timeout parameter will be removed when native socket timeout is fixed.
         """
         if not self.is_connected:
-            print("attempting to establish another conn..")
             self.connect()
         time.sleep(0.05)
         initial = time.monotonic()
@@ -170,7 +169,7 @@ class EthernetManager:
         failure_count = 0
         if self.eth.connected:
             if self.debug:
-                print("Checking for DCHP server...")
+                print("Checking for dhcp server...")
             self.pixel_status((100, 0, 0))
             while self.eth.ifconfig()[0] == "0.0.0.0":
                 failure_count += 1
