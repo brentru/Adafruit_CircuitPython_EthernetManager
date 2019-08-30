@@ -38,6 +38,7 @@ Implementation Notes
 * Adafruit CircuitPython firmware for the supported boards:
   https://github.com/adafruit/circuitpython/releases
 """
+import gc
 import time
 import wiznet
 import socket
@@ -79,62 +80,6 @@ class EthernetManager:
         """
         self.eth = None
 
-    def reset(self):
-        raise NotImplementedError(
-            "Reset pin must be provided to EthernetManager prior to initialization."
-        )
-
-    def readline(sock):
-        """CPython socket readline implementation, returns bytes
-        up to, but not including '\r\n'
-        :param sock: Socket object"""
-        stamp - time.monotonic
-        line = bytes()
-
-        while b"\r\n" not in line:
-            data = sock.recv(1)
-            line += data
-            if sock.timeout > 0 and time.monotonic() - now > sock.timeout:
-                break
-            if not data:
-                break
-        # TODO, split off the b"\r\n" portion from the line
-        gc.collect()
-        return line
-
-    def connect(self, attempts=30):
-        """Attempts connecting with ethernet using the current settings.
-        Returns True if ethernet interface is connected.
-        :param int attempts: Optional amount of connection failures before returning False.
-        """
-        failure_count = 0
-        if self.is_connected:
-            if self.debug:
-                print("Checking for DCHP server...")
-            self.pixel_status((100, 0, 0))
-            while self.eth.ifconfig()[0] == "0.0.0.0":
-                failure_count += 1
-                if failure_count >= attempts:
-                    return False
-                time.sleep(1)
-            self.pixel_status((0, 100, 0))
-            return True
-        else:
-            raise Ethernet_Exception("Disconnected - plug an ethernet cable in.")
-
-    def pixel_status(self, value):
-        """
-        Change Status Pixel if it was defined
-
-        :param value: The value to set the Board's status LED to
-        :type value: int or 3-value tuple
-        """
-        if self.statuspix:
-            if hasattr(self.statuspix, "color"):
-                self.statuspix.color = value
-            else:
-                self.statuspix.fill(value)
-
     @property
     def is_connected(self):
         """Returns if an ethernet cable is physically connected."""
@@ -175,3 +120,158 @@ class EthernetManager:
     def ip_address(self):
         """Returns the IP Address as a formatted string"""
         return self.ifconfig()[0]
+
+    def reset(self):
+        raise NotImplementedError(
+            "Reset pin must be provided to EthernetManager prior to initialization."
+        )
+
+    def readline(self, sock, timeout):
+        """CPython socket readline implementation, returns bytes
+        up to, but not including '\r\n'
+        NOTE: The timeout parameter will be removed when native socket timeout is fixed.
+        :param sock: Socket object
+        :param int timeout: Socket read timeout, in seconds.
+        """
+        initial = time.monotonic()
+        line = bytes()
+        while b"\r\n" not in line:
+            data = sock.recv(1)
+            line += data
+            if timeout > 0 and time.monotonic() - initial > timeout:
+                socket.close()
+                raise RuntimeError("Didn't receive full response, failing out")
+                break
+            if not data:
+                break
+        # Remove EOL
+        line = line.split(b"\r\n",1)
+        gc.collect()
+        return line[0]
+
+    def connect(self, attempts=30):
+        """Attempts connecting with ethernet using the current settings.
+        Returns True if ethernet interface is connected.
+        :param int attempts: Optional amount of connection failures before returning False.
+        """
+        failure_count = 0
+        if self.is_connected:
+            if self.debug:
+                print("Checking for DCHP server...")
+            self.pixel_status((100, 0, 0))
+            while self.eth.ifconfig()[0] == "0.0.0.0":
+                failure_count += 1
+                if failure_count >= attempts:
+                    return False
+                time.sleep(1)
+            self.pixel_status((0, 100, 0))
+            return True
+        else:
+            raise Ethernet_Exception("Disconnected - plug an ethernet cable in.")
+
+    def get(self, url, **kw):
+        """
+        Pass the Get request to requests and update status LED
+
+        :param str url: The URL to retrieve data from
+        :param dict data: (Optional) Form data to submit
+        :param dict json: (Optional) JSON data to submit. (Data must be None)
+        :param dict header: (Optional) Header data to include
+        :param bool stream: (Optional) Whether to stream the Response
+        :return: The response from the request
+        :rtype: Response
+        """
+        if not self.esp.is_connected:
+            self.connect()
+        self.pixel_status((0, 0, 100))
+        return_val = requests.get(url, **kw)
+        self.pixel_status(0)
+        return return_val
+
+    def post(self, url, **kw):
+        """
+        Pass the Post request to requests and update status LED
+
+        :param str url: The URL to post data to
+        :param dict data: (Optional) Form data to submit
+        :param dict json: (Optional) JSON data to submit. (Data must be None)
+        :param dict header: (Optional) Header data to include
+        :param bool stream: (Optional) Whether to stream the Response
+        :return: The response from the request
+        :rtype: Response
+        """
+        if not self.esp.is_connected:
+            self.connect()
+        self.pixel_status((0, 0, 100))
+        return_val = requests.post(url, **kw)
+        return return_val
+
+    def put(self, url, **kw):
+        """
+        Pass the put request to requests and update status LED
+
+        :param str url: The URL to PUT data to
+        :param dict data: (Optional) Form data to submit
+        :param dict json: (Optional) JSON data to submit. (Data must be None)
+        :param dict header: (Optional) Header data to include
+        :param bool stream: (Optional) Whether to stream the Response
+        :return: The response from the request
+        :rtype: Response
+        """
+        if not self.esp.is_connected:
+            self.connect()
+        self.pixel_status((0, 0, 100))
+        return_val = requests.put(url, **kw)
+        self.pixel_status(0)
+        return return_val
+
+    def patch(self, url, **kw):
+        """
+        Pass the patch request to requests and update status LED
+
+        :param str url: The URL to PUT data to
+        :param dict data: (Optional) Form data to submit
+        :param dict json: (Optional) JSON data to submit. (Data must be None)
+        :param dict header: (Optional) Header data to include
+        :param bool stream: (Optional) Whether to stream the Response
+        :return: The response from the request
+        :rtype: Response
+        """
+        if not self.esp.is_connected:
+            self.connect()
+        self.pixel_status((0, 0, 100))
+        return_val = requests.patch(url, **kw)
+        self.pixel_status(0)
+        return return_val
+
+    def delete(self, url, **kw):
+        """
+        Pass the delete request to requests and update status LED
+
+        :param str url: The URL to PUT data to
+        :param dict data: (Optional) Form data to submit
+        :param dict json: (Optional) JSON data to submit. (Data must be None)
+        :param dict header: (Optional) Header data to include
+        :param bool stream: (Optional) Whether to stream the Response
+        :return: The response from the request
+        :rtype: Response
+        """
+        if not self.esp.is_connected:
+            self.connect()
+        self.pixel_status((0, 0, 100))
+        return_val = requests.delete(url, **kw)
+        self.pixel_status(0)
+        return return_val
+
+    def pixel_status(self, value):
+        """
+        Change Status Pixel if it was defined
+
+        :param value: The value to set the Board's status LED to
+        :type value: int or 3-value tuple
+        """
+        if self.statuspix:
+            if hasattr(self.statuspix, "color"):
+                self.statuspix.color = value
+            else:
+                self.statuspix.fill(value)
